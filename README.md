@@ -13,5 +13,5 @@ libcppweb contains the fowlling libraries
 
 = proxy
 
-the proxy library can be used to connect remote server via chained proxies of variaty protocols.
+the proxy library can be used to connect remote server via chained proxies of various protocols.
 
