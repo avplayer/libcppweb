@@ -13,8 +13,7 @@ int main(int argc, char **argv)
 
 	cppweb::proxy::async_connect(proxys, [](auto ec)
 	{
-
+		std::cout << "Hello, world! " << ec.message() << std::endl;
 	});
-	std::cout << "Hello, world!" << std::endl;
 	return 0;
 }
