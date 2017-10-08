@@ -95,8 +95,6 @@ namespace proxy{
 						return handler(error::make_error_code(static_cast<error::err_t>((*static_buf)[1])));
 					}
 
-					(*static_buf)[3]; // == ATYPE
-
 					// ATYPE==ipv4
 					if ((*static_buf)[3] == 1)
 					{
@@ -112,7 +110,8 @@ namespace proxy{
 						// [static_buf, 18] ipv6 + port
 						BOOST_ASIO_CORO_YIELD boost::asio::async_read(parent.s, boost::asio::buffer(static_buf->data() + 1, 17), boost::asio::transfer_exactly(17), *this);
 
-					}else if ((*static_buf)[3] == 3)
+					}
+					else if ((*static_buf)[3] == 3)
 					{
 						bytes_transfered = (*static_buf)[4];
 						// static_buf[4] contains address-length
