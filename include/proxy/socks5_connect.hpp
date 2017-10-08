@@ -51,82 +51,79 @@ namespace proxy{
 				{
 					// 写入　0x05, 0x01, 0x00
 					// TODO,  支持认证.
-					static_buf[0] = 0x05;
-					static_buf[1] = 0x01;
-					static_buf[2] = 0x00;
-					BOOST_ASIO_CORO_YIELD boost::asio::async_write(parent.s, boost::asio::buffer(static_buf, 3), *this);
-
-					BOOST_ASIO_CORO_YIELD boost::asio::async_read(parent.s, boost::asio::buffer(static_buf), boost::asio::transfer_exactly(2), *this);
+					(*static_buf)[0] = 0x05;
+					(*static_buf)[1] = 0x01;
+					(*static_buf)[2] = 0x00;
+					BOOST_ASIO_CORO_YIELD boost::asio::async_write(parent.s, boost::asio::buffer(static_buf->data(), 3), *this);
+					BOOST_ASIO_CORO_YIELD boost::asio::async_read(parent.s, boost::asio::buffer(*static_buf), boost::asio::transfer_exactly(2), *this);
 
 					// 解析是不是　0x05, 0x00
-					if (!(static_buf[0] == 5 && static_buf[1] == 0))
+					if (!((*static_buf)[0] == 5 && (*static_buf)[1] == 0))
 					{
 						return handler(error::make_error_code(error::proxy_not_athorized));
 					}
 
-					m_buffer = boost::make_local_shared<boost::asio::streambuf>();
-
 					{
-						std::ostream out(m_buffer.get());
-
-						out.write("\x05\0x01\0x00", 3);
+						(*static_buf)[0] = 0x05;
+						(*static_buf)[1] = 0x01;
+						(*static_buf)[2] = 0x00;
 
 						if (host_name_is_ipv4_string(parent.host))
 						{
-							out.write("\0x01", 1);
-							out.write(reinterpret_cast<const char*>(boost::asio::ip::address_v4::from_string(parent.host).to_bytes().data()), 4);
+							(*static_buf)[3] = 0x01;
+							std::memcpy(&((*static_buf)[4]), boost::asio::ip::address_v4::from_string(parent.host).to_bytes().data(), 4);
+							std::memcpy(&((*static_buf)[8]), &parent.port, 2);
+							bytes_transfered = 10;
 						}
 						else
 						{
-							uint8_t octet_len = parent.host.length();
-							out.write((const char*)&octet_len, 1);
-							out << parent.host;
+							(*static_buf)[3] = 0x03;
+							(*static_buf)[4] = parent.host.length();
+							std::memcpy(&((*static_buf)[5]), parent.host.c_str(), parent.host.length());
+							std::memcpy(&((*static_buf)[5+parent.host.length()]), &parent.port, 2);
+							bytes_transfered = 7 + parent.host.length();
 						}
-
-						out.write((const char*)(&parent.port), 2);
 					}
 
 					// 执行　connect 命令.
-					BOOST_ASIO_CORO_YIELD boost::asio::async_write(parent.s, *m_buffer, *this);
-
-					BOOST_ASIO_CORO_YIELD boost::asio::async_read(parent.s, boost::asio::buffer(static_buf), boost::asio::transfer_exactly(5), *this);
+					BOOST_ASIO_CORO_YIELD boost::asio::async_write(parent.s, boost::asio::buffer(static_buf->data(), bytes_transfered), *this);
+					BOOST_ASIO_CORO_YIELD boost::asio::async_read(parent.s, boost::asio::buffer(*static_buf), boost::asio::transfer_exactly(5), *this);
 
 					// 解析返回值.
-					if (!(static_buf[0] == 5 && static_buf[1] == 0 && static_buf[2] == 0 ))
+					if (!((*static_buf)[0] == 5 && (*static_buf)[1] == 0 && (*static_buf)[2] == 0 ))
 					{
-						return handler(error::make_error_code(static_cast<error::err_t>(static_buf[1])));
+						return handler(error::make_error_code(static_cast<error::err_t>((*static_buf)[1])));
 					}
 
-					static_buf[3]; // == ATYPE
+					(*static_buf)[3]; // == ATYPE
 
 					// ATYPE==ipv4
-					if (static_buf[3] == 1)
+					if ((*static_buf)[3] == 1)
 					{
-						static_buf[0] = static_buf[4];
-						BOOST_ASIO_CORO_YIELD boost::asio::async_read(parent.s, boost::asio::buffer(&static_buf[1], 5), boost::asio::transfer_exactly(5), *this);
+						(*static_buf)[0] = (*static_buf)[4];
+						BOOST_ASIO_CORO_YIELD boost::asio::async_read(parent.s, boost::asio::buffer(static_buf->data() + 1, 5), boost::asio::transfer_exactly(5), *this);
 						// [static_buf, 6] ipv4 + port
-						parent.bind_addr = boost::asio::ip::address_v4(ntohl(*reinterpret_cast<uint32_t*>(&static_buf[0]))).to_string();
-						parent.bind_port = ntohs(*reinterpret_cast<uint16_t*>(&static_buf[4]));
+						parent.bind_addr = boost::asio::ip::address_v4(ntohl(*reinterpret_cast<uint32_t*>(static_buf->data()))).to_string();
+						parent.bind_port = ntohs(*reinterpret_cast<uint16_t*>(&(*static_buf)[4]));
 					}
-					else if (static_buf[3] == 4)
+					else if ((*static_buf)[3] == 4)
 					{
-						static_buf[0] = static_buf[4];
+						(*static_buf)[0] = (*static_buf)[4];
 						// [static_buf, 18] ipv6 + port
-						BOOST_ASIO_CORO_YIELD boost::asio::async_read(parent.s, boost::asio::buffer(&static_buf[1], 17), boost::asio::transfer_exactly(17), *this);
+						BOOST_ASIO_CORO_YIELD boost::asio::async_read(parent.s, boost::asio::buffer(static_buf->data() + 1, 17), boost::asio::transfer_exactly(17), *this);
 
-					}else if ( static_buf[3] == 3)
+					}else if ((*static_buf)[3] == 3)
 					{
+						bytes_transfered = (*static_buf)[4];
 						// static_buf[4] contains address-length
-						m_buffer = boost::make_local_shared<boost::asio::streambuf>();
-						BOOST_ASIO_CORO_YIELD boost::asio::async_read(parent.s, m_buffer->prepare(static_buf[4] + 2), boost::asio::transfer_exactly(static_buf[4] + 2), *this);
-						m_buffer->commit(bytes_transfered);
+						BOOST_ASIO_CORO_YIELD boost::asio::async_read(parent.s, boost::asio::buffer(*static_buf), boost::asio::transfer_exactly(bytes_transfered), *this);
 
-						// now m_buffer contains address and port.
-						parent.bind_addr.resize(bytes_transfered - 2);
-
-						m_buffer->sgetn(&parent.bind_addr[0], bytes_transfered - 2);
-						m_buffer->sgetn((char*)(&parent.bind_port), 2);
-						parent.bind_port = ntohs(parent.bind_port);
+						// now static_buf contains address and port.
+						parent.bind_addr.assign(static_buf->data(), bytes_transfered - 2);
+						{
+							auto ptr = (char*)(static_buf->data() + bytes_transfered - 2);
+							parent.bind_port = ntohs(*ptr);
+						}
 					}
 					else
 					{
@@ -140,19 +137,20 @@ namespace proxy{
 
 			socks5_connect_op(socks5_connect& p, const Handler& handler)
 				: parent(p)
+				, static_buf(boost::make_local_shared<std::array<char, 96>>())
 				, handler(handler)
 			{
 			}
 
 			socks5_connect_op(socks5_connect& p, Handler&& handler)
 				: parent(p)
+				, static_buf(boost::make_local_shared<std::array<char, 96>>())
 				, handler(handler)
 			{
 			}
 
-			std::array<char, 24> static_buf;
 			socks5_connect& parent;
-			boost::local_shared_ptr<boost::asio::streambuf> m_buffer;
+			boost::local_shared_ptr<std::array<char, 96>> static_buf;
 			Handler handler;
 		};
 
