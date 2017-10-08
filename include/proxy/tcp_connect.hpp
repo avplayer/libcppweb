@@ -39,12 +39,14 @@ namespace proxy{
 			tcp_connect_op(tcp_connect& p, const Handler& handler)
 				: parent(p)
 				, r(boost::make_local_shared<boost::asio::ip::tcp::resolver>(p.get_io_service()))
+				, handler(handler)
 			{
 			}
 
 			tcp_connect_op(tcp_connect& p, Handler&& handler)
 				: parent(p)
 				, r(boost::make_local_shared<boost::asio::ip::tcp::resolver>(p.get_io_service()))
+				, handler(handler)
 			{
 			}
 
