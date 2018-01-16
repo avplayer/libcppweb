@@ -17,7 +17,6 @@
 #include <boost/smart_ptr/make_local_shared.hpp>
 #include "error.hpp"
 
-namespace cppweb{
 namespace proxy{
 
 	namespace {
@@ -184,4 +183,4 @@ namespace proxy{
 		std::string bind_addr;
 	};
 
-}}
+}

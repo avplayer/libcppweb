@@ -4,7 +4,6 @@
 #include <boost/asio/coroutine.hpp>
 #include "proxy_chain.hpp"
 
-namespace cppweb{
 namespace proxy{
 
 	namespace impl_detail
@@ -56,4 +55,4 @@ namespace proxy{
 	{
 		impl_detail::async_connect_op<typename std::remove_reference<Handler>::type>(the_proxy_chain, handler)();
 	}
-}}
+}

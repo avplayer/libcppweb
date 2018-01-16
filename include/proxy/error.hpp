@@ -3,7 +3,6 @@
 
 #include <boost/system/error_code.hpp>
 
-namespace cppweb{
 namespace proxy{
 namespace error{
 
@@ -43,4 +42,4 @@ namespace error{
 		return boost::system::error_code(static_cast<int>(e), get_proxy_error_category());
 	}
 
-}}}
+}}

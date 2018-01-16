@@ -1,7 +1,6 @@
 
 #include "proxy/error.hpp"
 
-namespace cppweb{
 namespace proxy{
 namespace error{
 
@@ -39,4 +38,4 @@ namespace error{
 		return "unknow error";
 	}
 
-}}}
+}}

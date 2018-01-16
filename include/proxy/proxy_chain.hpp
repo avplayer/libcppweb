@@ -8,9 +8,8 @@
 #include <boost/asio/io_service.hpp>
 #include <boost/tti/has_member_function.hpp>
 
-BOOST_TTI_HAS_MEMBER_FUNCTION(get_io_service)
+BOOST_TTI_HAS_MEMBER_FUNCTION(get_io_context)
 
-namespace cppweb{
 namespace proxy{
 
 	class proxy_interface
@@ -61,7 +60,7 @@ namespace proxy{
 			typename = std::enable_if_t<
 				std::conjunction_v<
 					std::is_copy_constructible<typename std::remove_reference<ProxyImpl>::type>,
-					has_member_function_get_io_service<ProxyImpl, boost::asio::io_service&>
+					has_member_function_get_io_context<ProxyImpl, boost::asio::io_service&>
 				>
 			>
 		>
@@ -71,7 +70,7 @@ namespace proxy{
 			proxy_impl.reset(new proxy_impl_copyable_adapter<typename std::remove_reference<ProxyImpl>::type>(proxyimpl));
 		}
 
-		template<typename ProxyImpl, typename = std::enable_if_t<has_member_function_get_io_service<ProxyImpl, boost::asio::io_service&>::value>>
+		template<typename ProxyImpl, typename = std::enable_if_t<has_member_function_get_io_context<ProxyImpl, boost::asio::io_service&>::value>>
 		proxy_interface(ProxyImpl* proxyimpl)
 			: io(proxyimpl->get_io_service())
 		{
@@ -90,4 +89,4 @@ namespace proxy{
 	};
 
 	typedef std::vector<proxy_interface> connect_chain;
-}}
+}

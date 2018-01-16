@@ -11,4 +11,4 @@ target_link_libraries(libcppweb Boost::system Boost::thread Boost::regex)
 add_executable(testcppweb test/main.cpp)
 
 target_link_libraries(testcppweb libcppweb)
-target_link_libraries(testcppweb Boost::system Boost::thread)
+target_link_libraries(testcppweb crypto ssl)

@@ -8,10 +8,14 @@ libcppweb contains the fowlling libraries
 
 > proxy
 
-> http
-
+> genericstream
 
 = proxy
 
 the proxy library can be used to connect remote server via chained proxies of various protocols.
+
+= genericstream
+
+the genericstream library is a type-erased wrapper arround TCP and TLS streams. best suit for beast http library to support http and https
+
 

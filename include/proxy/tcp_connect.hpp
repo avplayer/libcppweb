@@ -9,9 +9,9 @@
 #include <boost/smart_ptr/local_shared_ptr.hpp>
 #include <boost/smart_ptr/make_local_shared.hpp>
 
-namespace cppweb{
 namespace proxy{
 
+	template<typename TcpSocket>
 	class tcp_connect
 	{
 		template<typename Handler>
@@ -56,7 +56,7 @@ namespace proxy{
 		};
 
 	public:
-		tcp_connect(boost::asio::ip::tcp::socket& s, std::string host, std::string port)
+		tcp_connect(TcpSocket& s, std::string host, std::string port)
 			: s(s)
 			, host(host)
 			, port(port)
@@ -76,8 +76,8 @@ namespace proxy{
 		}
 
 	private:
-		boost::asio::ip::tcp::socket& s;
+		TcpSocket& s;
 		std::string host, port;
 	};
 
-}}
+}
